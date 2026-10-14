@@ -7,6 +7,7 @@ const LIBELLES = {
   CARTE_MANQUANTE: 'Carte manquante',
   NON_INSCRIT: 'Non inscrit',
   DOUBLON: 'Doublon / fraude',
+  AUTRE_CAR: 'Pas dans ce car',
 };
 const COULEURS = {
   EN_REGLE: 'bg-vert-clair text-vert-fonce',
@@ -14,6 +15,7 @@ const COULEURS = {
   CARTE_MANQUANTE: 'bg-orange-clair text-orange',
   NON_INSCRIT: 'bg-rouge-clair text-rouge',
   DOUBLON: 'bg-rouge-clair text-rouge',
+  AUTRE_CAR: 'bg-orange-clair text-orange',
 };
 
 export default function Rapports() {

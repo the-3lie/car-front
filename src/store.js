@@ -44,7 +44,41 @@ function parNom(texte) {
 }
 
 // Même logique que le serveur, mais sur la liste locale
-export function verifierLocal({ identifiant, recu }) {
+// Compare le car de l'étudiant avec celui où se trouve le contrôleur ("Car 3" = "3" = "n° 3")
+const cleCar = (s) => {
+  const chiffres = String(s ?? '').match(/\d+/g);
+  return chiffres ? chiffres.join('-') : String(s ?? '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+};
+const memeCar = (a, b) => cleCar(a) !== '' && cleCar(a) === cleCar(b);
+
+function conclure(etu, car) {
+  const aCarte = etu.cartes.length > 0;
+  const aRecu = etu.recus.length > 0;
+  let base;
+  if (aCarte && aRecu) base = { resultat: 'EN_REGLE', message: 'Accepté' };
+  else if (aCarte) base = { resultat: 'RECU_MANQUANT', message: 'Reçu manquant, à vérifier' };
+  else if (aRecu) base = { resultat: 'CARTE_MANQUANTE', message: 'Carte manquante, à vérifier' };
+  else base = { resultat: 'RECU_MANQUANT', message: 'Ni carte ni reçu, à vérifier' };
+
+  if (etu.car && String(car ?? '').trim() && !memeCar(etu.car, car)) {
+    return { resultat: 'AUTRE_CAR', message: `Pas dans ce car : son car est le n° ${etu.car}`, etudiant: infos(etu), paiement: base.resultat };
+  }
+  return { ...base, etudiant: infos(etu), paiement: base.resultat };
+}
+
+// Le contenu d'un QR code peut être le matricule seul, "matricule=XXX" ou un lien contenant le matricule
+export function extraireMatricule(texte) {
+  let t = String(texte || '').trim();
+  try {
+    const u = new URL(t);
+    t = u.searchParams.get('matricule') || u.searchParams.get('id') || u.pathname.split('/').filter(Boolean).pop() || t;
+  } catch { /* pas un lien */ }
+  const m = t.match(/matricule\s*[:=]\s*([A-Za-z0-9._\-/]+)/i);
+  if (m) t = m[1];
+  return t.trim();
+}
+
+export function verifierLocal({ identifiant, recu, car }) {
   const id = norm(identifiant);
   const r = norm(recu);
   let etu = index.parMatricule.get(id) || index.parCarte.get(id) || index.parRecu.get(id) || null;
@@ -65,14 +99,9 @@ export function verifierLocal({ identifiant, recu }) {
     }
     if (proprio && !etu) etu = proprio;
   }
-  if (!etu) return { resultat: 'NON_INSCRIT', message: 'Non inscrit : à signaler', etudiant: null };
+  if (!etu) return { resultat: 'NON_INSCRIT', message: "Il n'existe pas dans la liste", etudiant: null };
 
-  const aCarte = etu.cartes.length > 0;
-  const aRecu = etu.recus.length > 0;
-  if (aCarte && aRecu) return { resultat: 'EN_REGLE', message: 'En règle', etudiant: infos(etu) };
-  if (aCarte) return { resultat: 'RECU_MANQUANT', message: 'Reçu manquant, à vérifier', etudiant: infos(etu) };
-  if (aRecu) return { resultat: 'CARTE_MANQUANTE', message: 'Carte manquante, à vérifier', etudiant: infos(etu) };
-  return { resultat: 'RECU_MANQUANT', message: 'Ni carte ni reçu, à vérifier', etudiant: infos(etu) };
+  return conclure(etu, car);
 }
 
 // File d'attente des contrôles à envoyer
