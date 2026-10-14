@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body, #root { min-height: 100%; }
+body {
+  background: #f6f7f4;
+  color: #1c2420;
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+:focus-visible { outline: 3px solid #14532d; outline-offset: 2px; }
+
+@layer components {
+  .champ { @apply w-full rounded-lg border border-stone-300 bg-white px-4 py-3 text-lg; }
+  .btn { @apply rounded-lg px-5 py-3 text-lg font-semibold active:scale-[0.98]; }
+  .btn-principal { @apply btn bg-vert-fonce text-white; }
+  .btn-secondaire { @apply btn border border-stone-300 bg-white text-encre; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation: none !important; transition: none !important; }
+}
