@@ -20,16 +20,23 @@ export default function Controle({ surChangement }) {
   const [car, setCar] = useState(localStorage.getItem('car') || '');
   const [resultat, setResultat] = useState(null);
   const [erreur, setErreur] = useState('');
-  const [camera, setCamera] = useState(false);
+  // La caméra s'ouvre toute seule : le QR code est lu et vérifié sans rien toucher
+  const [camera, setCamera] = useState(() => localStorage.getItem('modeSaisie') !== '1');
   const [compteur, setCompteur] = useState(0);
   const champId = useRef(null);
 
-  useEffect(() => { localStorage.setItem('car', car); }, [car]);
+  const enCours = useRef(false);
 
-  async function controler(idSaisi = identifiant, recuSaisi = recu) {
+  useEffect(() => { localStorage.setItem('car', car); }, [car]);
+  useEffect(() => { localStorage.setItem('modeSaisie', camera ? '0' : '1'); }, [camera]);
+
+  // depuisScan : la vérification se fait même sans numéro de car (le car n'est alors pas comparé)
+  async function controler(idSaisi = identifiant, recuSaisi = recu, depuisScan = false) {
     setErreur('');
     if (!idSaisi.trim() && !recuSaisi.trim()) return;
-    if (!car.trim()) return setErreur('Indique le numéro du car avant de contrôler.');
+    if (!depuisScan && !car.trim()) return setErreur('Indique le numéro du car avant de contrôler.');
+    if (enCours.current) return;
+    enCours.current = true;
 
     const donnees = { identifiant: idSaisi.trim(), recu: recuSaisi.trim(), car: car.trim() };
     try {
@@ -61,6 +68,8 @@ export default function Controle({ surChangement }) {
       }
     } catch (e) {
       setErreur(e.horsLigne ? 'Pas de réseau et liste non téléchargée. Télécharge la liste avant le trajet.' : e.message);
+    } finally {
+      enCours.current = false;
     }
   }
 
@@ -73,31 +82,6 @@ export default function Controle({ surChangement }) {
         <span className="mb-1 block text-stone-700">Numéro de ton car</span>
         <input className="champ" value={car} onChange={(e) => setCar(e.target.value)} placeholder="Ex. 3" inputMode="text" />
       </label>
-
-      {camera ? (
-        <>
-          <Scanner
-            onScan={(t) => controler(extraireMatricule(t), '')}
-            onClose={(msg) => { setCamera(false); if (msg) setErreur(msg); }}
-          />
-          <p className="text-center text-stone-600">Présente le QR code de l'étudiant devant la caméra. {compteur > 0 && `${compteur} vérifié(s).`}</p>
-        </>
-      ) : (
-        <form onSubmit={(e) => { e.preventDefault(); controler(); }} className="space-y-3">
-          <label className="block">
-            <span className="mb-1 block text-stone-700">Nom, matricule ou numéro de carte</span>
-            <input ref={champId} className="champ" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} autoFocus autoComplete="off" />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-stone-700">Numéro de reçu (si présenté)</span>
-            <input className="champ" value={recu} onChange={(e) => setRecu(e.target.value)} autoCapitalize="characters" autoComplete="off" />
-          </label>
-          <div className="flex gap-3">
-            <button className="btn-principal flex-1">Vérifier</button>
-            <button type="button" className="btn-secondaire" onClick={() => { setCompteur(0); setCamera(true); }}>Scanner un QR code</button>
-          </div>
-        </form>
-      )}
 
       {erreur && <p role="alert" className="rounded-lg bg-rouge-clair p-3 text-rouge">{erreur}</p>}
 
@@ -143,6 +127,34 @@ export default function Controle({ surChangement }) {
           )}
         </section>
       )}
+      {camera ? (
+        <>
+          <Scanner
+            onScan={(t) => controler(extraireMatricule(t), '', true)}
+            onClose={(msg) => { setCamera(false); if (msg) setErreur(msg); }}
+          />
+          <p className="text-center text-stone-600">
+            Présente le QR code devant la caméra : il est lu et vérifié automatiquement. {compteur > 0 && `${compteur} vérifié(s).`}
+          </p>
+          {!car.trim() && <p className="text-center text-orange">Sans numéro de car, le car de l'étudiant n'est pas comparé.</p>}
+        </>
+      ) : (
+        <form onSubmit={(e) => { e.preventDefault(); controler(); }} className="space-y-3">
+          <label className="block">
+            <span className="mb-1 block text-stone-700">Nom, matricule ou numéro de carte</span>
+            <input ref={champId} className="champ" value={identifiant} onChange={(e) => setIdentifiant(e.target.value)} autoFocus autoComplete="off" />
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-stone-700">Numéro de reçu (si présenté)</span>
+            <input className="champ" value={recu} onChange={(e) => setRecu(e.target.value)} autoCapitalize="characters" autoComplete="off" />
+          </label>
+          <div className="flex gap-3">
+            <button className="btn-principal flex-1">Vérifier</button>
+            <button type="button" className="btn-secondaire" onClick={() => { setCompteur(0); setCamera(true); }}>Scanner un QR code</button>
+          </div>
+        </form>
+      )}
+
     </div>
   );
 }
