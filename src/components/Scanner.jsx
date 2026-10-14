@@ -9,13 +9,15 @@ export default function Scanner({ onScan, onClose }) {
   const dernier = useRef({ texte: '', t: 0 });
 
   useEffect(() => {
-    const lecteur = new Html5Qrcode('lecteur', { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false });
+    const lecteur = new Html5Qrcode('lecteur', { formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE], verbose: false, useBarcodeDetector: true });
     lecteur
       .start(
-        { facingMode: 'environment' },
+        { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
         {
-          fps: 10,
-          qrbox: (w, h) => { const c = Math.floor(Math.min(w, h) * 0.75); return { width: c, height: c }; },
+          fps: 20,
+          // Petite zone = moins de pixels à analyser = lecture plus rapide
+          qrbox: (w, h) => { const c = Math.max(120, Math.floor(Math.min(w, h) * 0.5)); return { width: c, height: c }; },
+          disableFlip: true,
         },
         (texte) => {
           const now = Date.now();
