@@ -26,19 +26,37 @@ function construire(snap) {
     e.cartes.forEach((c) => parCarte.set(c, e));
     e.recus.forEach((r) => parRecu.set(r, e));
   }
-  return { parMatricule, parCarte, parRecu };
+  const tous = snap.etudiants.map((e) => ({ e, cle: sansAccent(`${e.nom} ${e.prenom}`) }));
+  return { parMatricule, parCarte, parRecu, tous };
 }
 
 export const listePrete = () => index !== null;
 
 const norm = (s) => String(s ?? '').trim().toUpperCase();
-const infos = (e) => ({ matricule: e.matricule, nom: e.nom, prenom: e.prenom, filiere: e.filiere });
+const sansAccent = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase().trim();
+const infos = (e) => ({ matricule: e.matricule, nom: e.nom, prenom: e.prenom, filiere: e.filiere, car: e.car || null });
+
+// Recherche par nom ou prénom (accents et majuscules ignorés, ordre des mots libre)
+function parNom(texte) {
+  const mots = sansAccent(texte).split(/\s+/).filter((m) => m.length >= 2);
+  if (!mots.length) return [];
+  return index.tous.filter((x) => mots.every((m) => x.cle.includes(m))).slice(0, 10).map((x) => x.e);
+}
 
 // Même logique que le serveur, mais sur la liste locale
 export function verifierLocal({ identifiant, recu }) {
   const id = norm(identifiant);
   const r = norm(recu);
   let etu = index.parMatricule.get(id) || index.parCarte.get(id) || index.parRecu.get(id) || null;
+
+  // Pas un matricule ni un numéro connu : on cherche par nom
+  if (!etu && id) {
+    const trouves = parNom(identifiant);
+    if (trouves.length > 1) {
+      return { resultat: 'PLUSIEURS', message: 'Plusieurs étudiants correspondent, choisis le bon', etudiant: null, candidats: trouves.map(infos) };
+    }
+    if (trouves.length === 1) etu = trouves[0];
+  }
 
   if (r) {
     const proprio = index.parRecu.get(r);

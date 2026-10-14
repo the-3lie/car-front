@@ -36,7 +36,7 @@ export default function Admin() {
       <section className="space-y-3">
         <h2 className="text-xl font-bold">Importer les listes</h2>
         <p className="text-stone-600">
-          Fichier Excel ou CSV avec les colonnes : matricule, nom, prénom, filière, carte, reçu, montant, période.
+          Fichier Excel ou CSV avec les colonnes : matricule, nom, prénom, filière, car (numéro du car de l'étudiant), carte, reçu, montant, période.
           Seul le matricule est obligatoire. Importer deux fois le même fichier ne crée pas de doublons.
         </p>
         <input type="file" accept=".xlsx,.xls,.csv" className="champ" onChange={(e) => setFichier(e.target.files[0] || null)} />
@@ -59,7 +59,7 @@ export default function Admin() {
         )}
       </section>
 
-      <section className="space-y-4">
+      <section className="space-y-3">
         <h2 className="text-xl font-bold">Comptes contrôleurs</h2>
         <form onSubmit={creer} className="space-y-3">
           <input className="champ" placeholder="Nom d'utilisateur" value={nouveau.nom} onChange={(e) => setNouveau({ ...nouveau, nom: e.target.value })} autoCapitalize="none" required />
