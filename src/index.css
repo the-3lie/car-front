@@ -21,3 +21,7 @@ body {
 @media (prefers-reduced-motion: reduce) {
   * { animation: none !important; transition: none !important; }
 }
+
+/* Barre de compte à rebours (5 s) avant la remise à zéro du résultat */
+@keyframes decompte { from { width: 100%; } to { width: 0; } }
+.barre-5s { animation: decompte 5s linear forwards; }

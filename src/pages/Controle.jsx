@@ -28,6 +28,12 @@ export default function Controle({ surChangement }) {
   const enCours = useRef(false);
 
   useEffect(() => { localStorage.setItem('car', car); }, [car]);
+  // Après un scan, le résultat reste 5 secondes puis l'écran se remet à zéro, prêt pour le suivant
+  useEffect(() => {
+    if (!camera || !resultat || resultat.resultat === 'PLUSIEURS') return;
+    const t = setTimeout(() => setResultat(null), 5000);
+    return () => clearTimeout(t);
+  }, [resultat, camera]);
   useEffect(() => { localStorage.setItem('modeSaisie', camera ? '0' : '1'); }, [camera]);
 
   // depuisScan : la vérification se fait même sans numéro de car (le car n'est alors pas comparé)
@@ -58,7 +64,7 @@ export default function Controle({ surChangement }) {
         // Liste pas encore téléchargée : on interroge le serveur directement
         rep = await api.verifier(donnees);
       }
-      setResultat({ ...rep, saisie: donnees.identifiant || donnees.recu });
+      setResultat({ ...rep, saisie: donnees.identifiant || donnees.recu, horodatage: Date.now() });
       if (rep.resultat !== 'PLUSIEURS') {
         setCompteur((n) => n + 1);
         navigator.vibrate?.(rep.resultat === 'NON_INSCRIT' || rep.resultat === 'DOUBLON' || rep.resultat === 'AUTRE_CAR' ? [200, 100, 200] : 120);
@@ -102,7 +108,8 @@ export default function Controle({ surChangement }) {
       )}
 
       {resultat && st && (
-        <section className={`${st.fond} rounded-2xl p-6 text-white`} aria-live="assertive">
+        <section key={resultat.horodatage} className={`${st.fond} relative overflow-hidden rounded-2xl p-6 text-white`} aria-live="assertive">
+          {camera && <div className="barre-5s absolute inset-x-0 top-0 h-1.5 bg-white/70" />}
           <div className="flex items-center gap-4">
             <span className="text-5xl font-bold leading-none" aria-hidden="true">{st.icone}</span>
             <p className="text-3xl font-bold">{st.titre}</p>
