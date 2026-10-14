@@ -26,12 +26,17 @@ export default function Controle({ surChangement }) {
   const champId = useRef(null);
 
   const enCours = useRef(false);
+  const [cleScanner, setCleScanner] = useState(0); // change à chaque rafraîchissement : la caméra redémarre à neuf
 
   useEffect(() => { localStorage.setItem('car', car); }, [car]);
   // Après un scan, le résultat reste 5 secondes puis l'écran se remet à zéro, prêt pour le suivant
   useEffect(() => {
     if (!camera || !resultat || resultat.resultat === 'PLUSIEURS') return;
-    const t = setTimeout(() => setResultat(null), 5000);
+    const t = setTimeout(() => {
+      setResultat(null);
+      setErreur('');
+      setCleScanner((n) => n + 1); // rafraîchit le scanner : caméra relancée, prête pour la personne suivante
+    }, 5000);
     return () => clearTimeout(t);
   }, [resultat, camera]);
   useEffect(() => { localStorage.setItem('modeSaisie', camera ? '0' : '1'); }, [camera]);
@@ -137,6 +142,7 @@ export default function Controle({ surChangement }) {
       {camera ? (
         <>
           <Scanner
+            key={cleScanner}
             onScan={(t) => controler(extraireMatricule(t), '', true)}
             onClose={(msg) => { setCamera(false); if (msg) setErreur(msg); }}
           />
