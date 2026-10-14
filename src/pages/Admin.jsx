@@ -59,7 +59,7 @@ export default function Admin() {
         )}
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-4">
         <h2 className="text-xl font-bold">Comptes contrôleurs</h2>
         <form onSubmit={creer} className="space-y-3">
           <input className="champ" placeholder="Nom d'utilisateur" value={nouveau.nom} onChange={(e) => setNouveau({ ...nouveau, nom: e.target.value })} autoCapitalize="none" required />
